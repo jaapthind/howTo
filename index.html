@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="Rainbow Liquid Glass Personal Tracker">
+    <title>How To | Rainbow Liquid Tracker</title>
+    
+    <!-- 
+      ======================================================================
+      RAINBOW LIQUID GLASS THEME - CSS ARCHITECTURE
+      ======================================================================
+    -->
+    <style>
+        /* --- CSS VARIABLES & THEMING --- */
+        :root {
+            /* Core Colors */
+            --bg-base: #050505;
+            --text-main: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.6);
+            
+            /* Rainbow Palette for Glass Accents */
+            --rainbow-1: #ff0040;
+            --rainbow-2: #ff7a00;
+            --rainbow-3: #ffea00;
+            --rainbow-4: #00ff2b;
+            --rainbow-5: #00e1ff;
+            --rainbow-6: #0015ff;
+            --rainbow-7: #9d00ff;
+            --rainbow-8: #ff00ea;
+
+            /* Liquid Glass Properties */
+            --glass-bg: rgba(255, 255, 255, 0.02);
+            --glass-bg-hover: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-border-highlight: rgba(255, 255, 255, 0.3);
+            --glass-blur: blur(30px) saturate(200%);
+            --glass-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            --glass-inner-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), inset 0 -1px 1px rgba(0, 0, 0, 0.5);
+            
+            /* Animations */
+            --transition-bounce: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            --transition-smooth: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* --- RESET & TYPOGRAPHY --- */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            min-height: 100vh;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- BACKGROUND SIMULATION CONTAINER --- */
+        #fluid-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -2;
+            pointer-events: none;
+            filter: blur(40px) saturate(150%);
+            transform: scale(1.1); /* Hide blurry edges */
+        }
+
+        /* Dark overlay to ensure text readability over the bright rainbow background */
+        .ambient-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at 50% 50%, rgba(5,5,5,0.4) 0%, rgba(5,5,5,0.8) 100%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* --- MAIN LAYOUT --- */
+        .app-container {
+            width: 100%;
+            max-width: 1400px; /* Wide layout to allow full-width pills */
+            margin: 0 auto;
+            padding: 4rem 2rem;
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 3rem;
+        }
+
+        /* --- HEADER STYLES --- */
+        header {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 2rem;
+            animation: fadeInDown 1s ease-out forwards;
+        }
+
+        .hero-title {
+            font-size: 4rem;
+            font-weight: 900;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            background: linear-gradient(to right, var(--rainbow-1), var(--rainbow-3), var(--rainbow-5), var(--rainbow-7));
+            background-size: 300% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientMove 8s linear infinite;
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.2));
+            margin-bottom: 1rem;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+            font-weight: 300;
+        }
+
+        /* --- FLOATING PILL CARDS (THE CORE COMPONENT) --- */
+        .tracker-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem; /* Space between floating pills */
+            width: 100%;
+        }
+
+        .pill-card {
+            width: 100%; /* Spans full width of container */
+            border-radius: 100vmax; /* Creates the perfect pill shape */
+            padding: 1.5rem 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            
+            /* Liquid Glass Core */
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow), var(--glass-inner-shadow);
+            
+            /* Positioning for glowing borders */
+            position: relative;
+            overflow: hidden;
+            
+            /* Animations */
+            transition: var(--transition-bounce);
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            
+            /* Initial state for entrance animation */
+            opacity: 0;
+            transform: translateY(50px);
+        }
+
+        /* The Rainbow Liquid Border Effect on Hover */
+        .pill-card::before {
+            content: '';
+            position: absolute;
+            top: -2px; left: -2px; right: -2px; bottom: -2px;
+            background: linear-gradient(90deg, 
+                var(--rainbow-1), var(--rainbow-2), var(--rainbow-3), 
+                var(--rainbow-4), var(--rainbow-5), var(--rainbow-6), 
+                var(--rainbow-7), var(--rainbow-8), var(--rainbow-1));
+            background-size: 300% 300%;
+            z-index: -1;
+            border-radius: 100vmax;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            animation: gradientMove 4s linear infinite;
+        }
+
+        .pill-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6), 0 0 40px rgba(255, 255, 255, 0.1);
+            background: var(--glass-bg-hover);
+        }
+
+        .pill-card:hover::before {
+            opacity: 0.5; /* Reveals the rainbow border on hover */
+        }
+
+        /* --- PILL CONTENT LAYOUT --- */
+        .pill-content-left {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            flex: 1;
+            min-width: 0; /* Prevents flex blowout */
+        }
+
+        .pill-icon-container {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.05);
+        }
+
+        .pill-icon {
+            font-size: 1.8rem;
+        }
+
+        .pill-text {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            overflow: hidden;
+        }
+
+        .pill-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #fff;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .pill-desc {
+            font-size: 1rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pill-content-right {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            flex-shrink: 0;
+        }
+
+        .pill-category-badge {
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .pill-action-arrow {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-bounce);
+        }
+
+        .pill-card:hover .pill-action-arrow {
+            background: rgba(255, 255, 255, 0.9);
+            color: #000;
+            transform: translateX(10px);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+
+        /* --- CATEGORY COLORS --- */
+        .cat-code { color: #00e1ff; border-color: rgba(0, 225, 255, 0.3); text-shadow: 0 0 10px rgba(0, 225, 255, 0.5); }
+        .cat-recipe { color: #ff0040; border-color: rgba(255, 0, 64, 0.3); text-shadow: 0 0 10px rgba(255, 0, 64, 0.5); }
+        .cat-hardware { color: #ffea00; border-color: rgba(255, 234, 0, 0.3); text-shadow: 0 0 10px rgba(255, 234, 0, 0.5); }
+        .cat-other { color: #9d00ff; border-color: rgba(157, 0, 255, 0.3); text-shadow: 0 0 10px rgba(157, 0, 255, 0.5); }
+
+        /* --- ANIMATIONS --- */
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Class added via JS to animate items in */
+        .animate-in {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- RESPONSIVE DESIGN --- */
+        @media (max-width: 900px) {
+            .pill-card {
+                flex-direction: column;
+                border-radius: 30px; /* Fallback from pill to rounded rect on mobile */
+                padding: 2rem;
+                gap: 1.5rem;
+                align-items: flex-start;
+            }
+            .pill-content-left {
+                width: 100%;
+            }
+            .pill-content-right {
+                width: 100%;
+                justify-content: space-between;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                padding-top: 1.5rem;
+            }
+            .hero-title {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 
+      ======================================================================
+      BACKGROUND: RAINBOW LIQUID BLURBS CANVAS
+      ======================================================================
+    -->
+    <canvas id="fluid-canvas"></canvas>
+    <div class="ambient-overlay"></div>
+
+    <!-- 
+      ======================================================================
+      MAIN APPLICATION CONTAINER
+      ======================================================================
+    -->
+    <div class="app-container">
+        
+        <header>
+            <h1 class="hero-title">Knowledge Nexus</h1>
+            <p class="hero-subtitle">Manual Liquid Glass Tracking Matrix</p>
+        </header>
+
+        <!-- Container where JS will inject the pill cards -->
+        <main class="tracker-list" id="tracker-container">
+            <!-- Cards are generated here via the Data Array below -->
+        </main>
+
+    </div>
+
+    <!-- 
+      ======================================================================
+      APPLICATION LOGIC & DATA
+      ======================================================================
+    -->
+    <script>
+        /**
+         * =====================================================================
+         * PART 1: THE MANUAL DATA ARRAY
+         * =====================================================================
+         * INSTRUCTIONS:
+         * To add a new liquid glass pill to the website, copy one of the
+         * placeholder objects below, paste it at the end of the array (before
+         * the closing `];`), and modify the text between the quotes.
+         * 
+         * Fields:
+         * - title: The main large text.
+         * - desc: The smaller description text.
+         * - link: The URL the pill goes to when clicked.
+         * - category: 'code', 'recipe', 'hardware', or 'other'.
+         * - icon: Any emoji to display on the left.
+         * =====================================================================
+         */
+        
+        const howToData = [
+            {
+                title: "[PLACEHOLDER] Configure C++ Recursion Server",
+                desc: "Notes on setting up recursive functions and memory management.",
+                link: "https://example.com/cpp-guide",
+                category: "code",
+                icon: "💻"
+            },
+            {
+                title: "[PLACEHOLDER] Ultimate Chocolate Chip Recipe",
+                desc: "Brown the butter first. Let the dough rest for 24 hours.",
+                link: "https://example.com/recipe",
+                category: "recipe",
+                icon: "🍪"
+            },
+            {
+                title: "[PLACEHOLDER] Bambu Lab A1 Mini Calibration",
+                desc: "Bed leveling sequence and custom G-code settings.",
+                link: "https://example.com/3d-print",
+                category: "hardware",
+                icon: "⚙️"
+            },
+            {
+                title: "[PLACEHOLDER] Liquid Glass CSS Tutorial",
+                desc: "How to use backdrop-filter and pseudo-elements for glassmorphism.",
+                link: "https://example.com/css-glass",
+                category: "code",
+                icon: "✨"
+            },
+            
+            // =================================================================
+            // ADD NEW ENTRIES BELOW THIS LINE. FOLLOW THE EXACT FORMAT.
+            // =================================================================
+            
+            /*
+            {
+                title: "Your Custom Title Here",
+                desc: "Your description here.",
+                link: "https://your-link.com",
+                category: "other", // Options: 'code', 'recipe', 'hardware', 'other'
+                icon: "📌"
+            },
+            */
+        ];
+
+        /**
+         * =====================================================================
+         * PART 2: UI GENERATION ENGINE
+         * =====================================================================
+         * This script takes the data from the array above and builds the 
+         * complex HTML structure for the floating liquid glass pills.
+         */
+        
+        const container = document.getElementById('tracker-container');
+
+        // Function to create a single pill card
+        function createPillCard(item, index) {
+            // Determine CSS class based on category
+            const catClass = `cat-${item.category.toLowerCase()}`;
+            
+            // Create main anchor tag wrapper
+            const card = document.createElement('a');
+            card.href = item.link;
+            card.target = '_blank'; // Opens in new tab
+            card.className = 'pill-card';
+            
+            // Set staggered animation delay so they cascade in
+            card.style.transitionDelay = `${index * 0.1}s`;
+
+            // Build Inner HTML Structure
+            card.innerHTML = `
+                <div class="pill-content-left">
+                    <div class="pill-icon-container">
+                        <span class="pill-icon">${item.icon}</span>
+                    </div>
+                    <div class="pill-text">
+                        <h2 class="pill-title">${item.title}</h2>
+                        <p class="pill-desc">${item.desc}</p>
+                    </div>
+                </div>
+                
+                <div class="pill-content-right">
+                    <span class="pill-category-badge ${catClass}">
+                        ${item.category}
+                    </span>
+                    <div class="pill-action-arrow">
+                        <!-- SVG Arrow Right -->
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // Render loop to build DOM
+        function renderCards() {
+            container.innerHTML = ''; // Clear container
+            
+            howToData.forEach((item, index) => {
+                const cardNode = createPillCard(item, index);
+                container.appendChild(cardNode);
+                
+                // Trigger animation on next frame to allow DOM to register initial state
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        cardNode.classList.add('animate-in');
+                    });
+                });
+            });
+        }
+
+        // Initialize UI
+        renderCards();
+
+        /**
+         * =====================================================================
+         * PART 3: MOVING RAINBOW LIQUID BLURBS ENGINE (CANVAS WEBGL/2D)
+         * =====================================================================
+         * Generates a complex, constantly shifting fluid background using
+         * multiple interacting radial gradients that bounce and merge.
+         */
+         
+        const canvas = document.getElementById('fluid-canvas');
+        const ctx = canvas.getContext('2d', { alpha: false }); // Optimize for no transparency to background
+
+        let width, height;
+        let orbs = [];
+        
+        // Define vibrant rainbow color palette for the liquid
+        const colorPalette = [
+            '#ff0040', // Deep Red/Pink
+            '#ff7a00', // Orange
+            '#ffea00', // Yellow
+            '#00ff2b', // Bright Green
+            '#00e1ff', // Cyan
+            '#0015ff', // Deep Blue
+            '#9d00ff', // Purple
+            '#ff00ea'  // Magenta
+        ];
+
+        // Resize handler to keep canvas full screen
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            // Over-render slightly to cover blurred edges
+            canvas.width = width * 1.2; 
+            canvas.height = height * 1.2;
+            ctx.translate(width * 0.1, height * 0.1); // Center the over-render
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Orb Object representing a single liquid "blurb"
+        class LiquidOrb {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                // Generate large radiuses for smooth blending
+                this.radius = (Math.random() * 300) + 400; 
+                // Random velocity
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                // Pick a random color from palette
+                this.color = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+                
+                // For pulsing size effect
+                this.baseRadius = this.radius;
+                this.angle = Math.random() * Math.PI * 2;
+                this.pulseSpeed = 0.01 + Math.random() * 0.02;
+            }
+
+            update() {
+                // Move
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Pulse size
+                this.angle += this.pulseSpeed;
+                this.radius = this.baseRadius + Math.sin(this.angle) * 100;
+
+                // Bounce off "walls" (with generous margins since it's blurred)
+                if (this.x < -this.radius || this.x > width + this.radius) this.vx *= -1;
+                if (this.y < -this.radius || this.y > height + this.radius) this.vy *= -1;
+            }
+
+            draw(ctx) {
+                // Draw as a soft radial gradient
+                const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+                
+                // Convert hex to rgb to allow alpha blending in gradient
+                const hex = this.color;
+                const r = parseInt(hex.slice(1, 3), 16);
+                const g = parseInt(hex.slice(3, 5), 16);
+                const b = parseInt(hex.slice(5, 7), 16);
+                
+                grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 1)`);
+                grad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+
+                ctx.globalCompositeOperation = 'screen'; // Creates the bright merging effect
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Initialize Orbs (Use many for a dense fluid look)
+        const ORB_COUNT = 15;
+        for (let i = 0; i < ORB_COUNT; i++) {
+            orbs.push(new LiquidOrb());
+        }
+
+        // Main Animation Loop
+        function animateBackground() {
+            // Fill background with a very dark blue/black base
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = '#02000a'; 
+            ctx.fillRect(-width*0.2, -height*0.2, width * 1.4, height * 1.4);
+
+            // Update and draw all liquid orbs
+            orbs.forEach(orb => {
+                orb.update();
+                orb.draw(ctx);
+            });
+
+            requestAnimationFrame(animateBackground);
+        }
+
+        // Start loop
+        animateBackground();
+        
+    </script>
+</body>
+</html>
